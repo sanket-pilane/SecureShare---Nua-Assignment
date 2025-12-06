@@ -2,33 +2,32 @@ import { useEffect, useState, useContext } from "react";
 import { toast } from "react-toastify";
 import { AnimatePresence } from "framer-motion";
 
-// Context & Services
 import AuthContext from "../context/AuthContext";
 import fileService from "../features/files/fileService";
 
-// Sub Components
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardToolbar from "../components/dashboard/DashboardToolbar";
 import FileTable from "../components/dashboard/FileTable";
 import DeleteConfirmationModal from "../components/dashboard/DeleteConfirmationModal";
+import FilePreviewModal from "../components/dashboard/FilePreviewModal";
 import ShareModal from "../components/ShareModal";
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
 
-  // States
   const [files, setFiles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [uploading, setUploading] = useState(false);
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const totalSize = files.reduce((acc, file) => acc + file.size, 0);
   const filteredFiles = files.filter((f) =>
     f.originalName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // API Actions
   const fetchFiles = async () => {
     try {
       const data = await fileService.getFiles(user.token);
@@ -40,7 +39,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (user) fetchFiles();
-    // eslint-disable-next-line
   }, [user]);
 
   const handleFileChange = async (e) => {
@@ -81,10 +79,10 @@ const Dashboard = () => {
       setFiles(files.filter((f) => f._id !== deleteConfirm));
       setDeleteConfirm(null);
     } catch (error) {
-      console.error(error);
       toast.error("Operation failed");
     }
   };
+
   const handleDownload = (file) => {
     fileService.downloadFile(file._id, user.token, file.originalName);
   };
@@ -106,6 +104,7 @@ const Dashboard = () => {
           onShare={(file) => setSelectedFile(file)}
           onDownload={handleDownload}
           onDeleteRequest={(id) => setDeleteConfirm(id)}
+          onPreview={(file) => setPreviewFile(file)}
         />
       </div>
 
@@ -122,6 +121,14 @@ const Dashboard = () => {
           <DeleteConfirmationModal
             onConfirm={handleDelete}
             onCancel={() => setDeleteConfirm(null)}
+          />
+        )}
+
+        {previewFile && (
+          <FilePreviewModal
+            file={previewFile}
+            userToken={user.token}
+            onClose={() => setPreviewFile(null)}
           />
         )}
       </AnimatePresence>

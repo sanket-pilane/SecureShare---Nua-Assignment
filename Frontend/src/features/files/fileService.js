@@ -94,6 +94,18 @@ const revokeAccess = async (fileId, userId, token) => {
   return response.data;
 };
 
+const getFilePreview = async (fileId, token) => {
+  const config = {
+    headers: { Authorization: `Bearer ${token}` },
+    responseType: "blob",
+  };
+  const response = await axios.get(API_URL + "download/" + fileId, config);
+
+  return window.URL.createObjectURL(
+    new Blob([response.data], { type: response.headers["content-type"] })
+  );
+};
+
 const fileService = {
   uploadFiles,
   getFiles,
@@ -104,6 +116,7 @@ const fileService = {
   downloadFile,
   getPermissions,
   revokeAccess,
+  getFilePreview,
 };
 
 export default fileService;

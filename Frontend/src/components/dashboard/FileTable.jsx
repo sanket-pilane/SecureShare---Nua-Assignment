@@ -1,10 +1,17 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { FaFileAlt, FaCloudUploadAlt } from "react-icons/fa";
+import { FaCloudUploadAlt } from "react-icons/fa";
 import { Card } from "../ui/Card";
 import ActionMenu from "./ActionMenu";
+import FileIcon from "./FileIcon";
 import { formatBytes } from "../../lib/utils";
 
-const FileTable = ({ files, onShare, onDownload, onDeleteRequest }) => {
+const FileTable = ({
+  files,
+  onShare,
+  onDownload,
+  onDeleteRequest,
+  onPreview,
+}) => {
   return (
     <Card className="overflow-hidden border-slate-800 bg-slate-900/40 flex flex-col">
       <div className="overflow-x-auto flex-grow">
@@ -24,16 +31,18 @@ const FileTable = ({ files, onShare, onDownload, onDeleteRequest }) => {
                 files.map((file, index) => (
                   <motion.tr
                     key={file._id}
+                    layout
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
                     transition={{ delay: index * 0.05 }}
-                    className="group hover:bg-slate-800/30 transition-colors"
+                    onClick={() => onPreview(file)}
+                    className="group hover:bg-slate-800/30 transition-colors cursor-pointer"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-slate-800 text-slate-300 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
-                          <FaFileAlt />
+                        <div className="p-2.5 bg-slate-800 rounded-lg group-hover:bg-blue-600/10 transition-colors shadow-sm">
+                          <FileIcon mimeType={file.mimeType} />
                         </div>
                         <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
                           {file.originalName}
@@ -51,7 +60,10 @@ const FileTable = ({ files, onShare, onDownload, onDeleteRequest }) => {
                     <td className="px-6 py-4 text-sm text-slate-400">
                       {new Date(file.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td
+                      className="px-6 py-4 text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <ActionMenu
                         onShare={() => onShare(file)}
                         onDownload={() => onDownload(file)}
