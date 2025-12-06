@@ -19,6 +19,7 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
     const loadPreview = async () => {
       try {
         setLoading(true);
+        // Fetch the secure stream
         const url = await fileService.getFilePreview(file._id, userToken);
         activeUrl = url;
         setBlobUrl(url);
@@ -37,7 +38,9 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
     };
   }, [file, userToken]);
 
+  // --- MIME TYPE CHECKS ---
   const isImage = file.mimeType.startsWith("image/");
+  const isVideo = file.mimeType.startsWith("video/"); // Added Video Check
   const isPdf = file.mimeType === "application/pdf";
 
   const handleDownload = () => {
@@ -52,6 +55,7 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
         exit={{ opacity: 0, scale: 0.95 }}
         className="relative w-full h-full max-w-5xl max-h-[90vh] flex flex-col bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-800"
       >
+        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-950">
           <div className="flex flex-col">
             <h2 className="text-lg font-semibold text-slate-100 truncate max-w-md">
@@ -77,6 +81,7 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
           </div>
         </div>
 
+        {/* Content Area */}
         <div className="flex-1 bg-slate-950/50 flex items-center justify-center overflow-hidden relative">
           {loading && (
             <div className="flex flex-col items-center gap-3 text-blue-400">
@@ -97,6 +102,7 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
 
           {!loading && !error && blobUrl && (
             <>
+              {/* 1. IMAGE PREVIEW */}
               {isImage && (
                 <img
                   src={blobUrl}
@@ -105,6 +111,7 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
                 />
               )}
 
+              {/* 2. PDF PREVIEW */}
               {isPdf && (
                 <iframe
                   src={blobUrl}
@@ -113,14 +120,28 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
                 />
               )}
 
-              {!isImage && !isPdf && (
+              {/* 3. VIDEO PREVIEW (NEW) */}
+              {isVideo && (
+                <video
+                  controls
+                  autoPlay
+                  className="max-w-full max-h-full shadow-lg"
+                >
+                  <source src={blobUrl} type={file.mimeType} />
+                  Your browser does not support the video tag.
+                </video>
+              )}
+
+              {/* 4. FALLBACK (Docs, Excel, Zips) */}
+              {!isImage && !isPdf && !isVideo && (
                 <div className="text-center">
                   <div className="p-6 bg-slate-900 rounded-full inline-block mb-4">
                     <FaDownload size={48} className="text-slate-600" />
                   </div>
                   <p className="text-lg text-slate-200">No preview available</p>
                   <p className="text-sm text-slate-500 mb-4">
-                    This file type cannot be viewed in the browser.
+                    Browser cannot render {file.mimeType.split("/")[1]} files
+                    directly.
                   </p>
                   <Button variant="primary" onClick={handleDownload}>
                     Download to View

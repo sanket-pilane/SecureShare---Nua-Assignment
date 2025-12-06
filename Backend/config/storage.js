@@ -37,15 +37,21 @@ const localStorage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|pdf|csv|txt|zip|mp4/;
-  const extname = allowedTypes.test(
+  const allowedExtensions =
+    /jpeg|jpg|png|gif|pdf|csv|txt|zip|mp4|avi|mov|mkv|doc|docx|xls|xlsx|ppt|pptx/;
+
+  const allowedMimeTypes =
+    /jpeg|jpg|png|gif|pdf|csv|text|zip|mp4|avi|quicktime|x-matroska|msword|officedocument/;
+
+  const extname = allowedExtensions.test(
     path.extname(file.originalname).toLowerCase()
   );
-  const mimetype = allowedTypes.test(file.mimetype);
+  const mimetype = allowedMimeTypes.test(file.mimetype);
 
   if (extname && mimetype) {
     return cb(null, true);
   } else {
+    console.error("Blocked File:", file.originalname, file.mimetype); // Debug log
     cb(new Error("File type not supported"));
   }
 };
