@@ -1,15 +1,27 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { AuthProvider } from "./context/AuthContext";
+import Navbar from "./components/Navbar";
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <h1 className="text-4xl font-bold text-blue-600">
-        File Sharing App Initialized
-      </h1>
-    </div>
+    <AuthProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-100">
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
+          <ToastContainer />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
