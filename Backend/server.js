@@ -5,6 +5,10 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const connectDB = require("./config/db");
 const userRoute = require("./routes/userRoute");
+
+const fileRoutes = require("./routes/fileRoute");
+const path = require("path");
+
 dotenv.config();
 
 connectDB();
@@ -16,11 +20,14 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
 
-app.use("/api/users", userRoute);
-
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
+
+app.use("/api/users", userRoute);
+app.use("/api/files", fileRoutes);
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const PORT = process.env.PORT || 5000;
 
