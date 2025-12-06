@@ -102,12 +102,27 @@ const accessSharedFile = async (req, res) => {
   res.status(200).json(file);
 };
 
+const deleteFile = async (req, res) => {
+  const file = await File.findById(req.params.id);
+
+  if (!file) {
+    return res.status(404).json({ message: "File not found" });
+  }
+
+  if (file.owner.toString() !== req.user.id) {
+    return res.status(401).json({ message: "Not authorized" });
+  }
+
+  await File.deleteOne({ _id: req.params.id });
+
+  res.status(200).json({ id: req.params.id });
+};
+
 const downloadFile = async (req, res) => {
   const file = await File.findById(req.params.id);
 
   if (!file) return res.status(404).json({ message: "File not found" });
 
-  // Security Check: Is user owner OR in accessControl?
   const isAuthorized =
     file.owner.toString() === req.user.id ||
     file.accessControl.includes(req.user.id);
@@ -127,4 +142,5 @@ module.exports = {
   generateShareLink,
   accessSharedFile,
   downloadFile,
+  deleteFile,
 };

@@ -1,29 +1,41 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { motion } from "framer-motion";
+import { FaTimes, FaCopy, FaGlobe, FaUserPlus, FaLink } from "react-icons/fa";
 import fileService from "../features/files/fileService";
+
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 
 const ShareModal = ({ fileId, userToken, onClose }) => {
   const [email, setEmail] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleShareEmail = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await fileService.shareFile(fileId, email, userToken);
       toast.success("File shared successfully!");
       setEmail("");
     } catch (error) {
       toast.error(error.response?.data?.message || "Share failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGenerateLink = async () => {
+    setLoading(true);
     try {
       const data = await fileService.generateLink(fileId, userToken);
       setGeneratedLink(data.link);
-      toast.success("Link generated!");
+      toast.success("Public link created!");
     } catch (error) {
       toast.error("Could not generate link");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,65 +45,105 @@ const ShareModal = ({ fileId, userToken, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded shadow-lg w-96">
-        <h2 className="text-xl font-bold mb-4">Share File</h2>
-
-        {/* Email Share Section */}
-        <form onSubmit={handleShareEmail} className="mb-6 border-b pb-4">
-          <label className="block text-sm font-medium mb-2">
-            Share with User (Email)
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border p-2 rounded w-full"
-              placeholder="user@example.com"
-              required
-            />
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded"
-            >
-              Share
-            </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-xl shadow-2xl overflow-hidden"
+      >
+        <div className="flex justify-between items-center p-6 border-b border-slate-800 bg-slate-900/30">
+          <div>
+            <h3 className="text-xl font-bold text-slate-100">Share File</h3>
+            <p className="text-sm text-slate-400">Manage access permissions</p>
           </div>
-        </form>
-
-        {/* Link Share Section */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
-            Public Link (Expires in 24h)
-          </label>
-          {generatedLink ? (
-            <div className="flex gap-2 items-center bg-gray-100 p-2 rounded">
-              <span className="text-xs truncate w-48">{generatedLink}</span>
-              <button
-                onClick={copyToClipboard}
-                className="text-blue-600 text-sm font-bold"
-              >
-                Copy
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleGenerateLink}
-              className="w-full bg-slate-800 text-white py-2 rounded"
-            >
-              Generate Link
-            </button>
-          )}
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
+          >
+            <FaTimes />
+          </button>
         </div>
 
-        <button
-          onClick={onClose}
-          className="w-full mt-2 text-gray-500 hover:text-gray-700"
-        >
-          Close
-        </button>
-      </div>
+        <div className="p-6 space-y-8">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-slate-200 font-medium">
+              <FaUserPlus className="text-blue-500" />
+              <span>Invite User</span>
+            </div>
+            <form onSubmit={handleShareEmail} className="flex gap-3">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email address"
+                required
+                className="bg-slate-900/50 border-slate-700 focus:ring-blue-500/50"
+              />
+              <Button type="submit" variant="primary" disabled={loading}>
+                {loading ? "..." : "Invite"}
+              </Button>
+            </form>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-800" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-slate-950 px-2 text-slate-500">
+                Or share via link
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-slate-200 font-medium">
+              <FaGlobe className="text-purple-500" />
+              <span>Public Link</span>
+              <span className="text-xs font-normal text-slate-500 ml-auto bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                Expires in 24h
+              </span>
+            </div>
+
+            {generatedLink ? (
+              <div className="flex items-center gap-2 p-1.5 pl-3 bg-slate-900 border border-slate-700 rounded-md">
+                <FaLink className="text-slate-500 text-sm flex-shrink-0" />
+                <input
+                  readOnly
+                  value={generatedLink}
+                  className="bg-transparent border-none text-slate-300 text-sm w-full focus:outline-none"
+                />
+                <Button
+                  size="sm"
+                  onClick={copyToClipboard}
+                  className="flex-shrink-0 bg-slate-800 hover:bg-slate-700 text-white"
+                >
+                  <FaCopy size={14} />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={handleGenerateLink}
+                className="w-full bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300"
+                disabled={loading}
+              >
+                Generate Secure Link
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 bg-slate-900/50 border-t border-slate-800 flex justify-end">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="text-slate-400 hover:text-white"
+          >
+            Done
+          </Button>
+        </div>
+      </motion.div>
     </div>
   );
 };

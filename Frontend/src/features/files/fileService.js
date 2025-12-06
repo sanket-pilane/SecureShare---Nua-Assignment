@@ -69,11 +69,22 @@ const downloadFile = async (fileId, token, filename) => {
   link.remove();
 };
 
+const deleteFile = async (fileId, token) => {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+  const response = await axios.delete(API_URL + fileId, config);
+  return response.data;
+};
+
 const fileService = {
   uploadFiles,
   getFiles,
   shareFile,
   generateLink,
+  deleteFile,
   accessLink,
   downloadFile,
 };

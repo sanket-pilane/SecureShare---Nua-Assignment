@@ -9,6 +9,7 @@ const {
   generateShareLink,
   accessSharedFile,
   downloadFile,
+  deleteFile,
 } = require("../controllers/fileController");
 
 const router = express.Router();
@@ -48,5 +49,6 @@ router.post("/:id/share", protect, shareFile);
 router.post("/:id/link", protect, generateShareLink);
 router.get("/share/:token", protect, accessSharedFile);
 router.get("/download/:id", protect, downloadFile);
+router.delete("/:id", protect, deleteFile);
 
 module.exports = router;
