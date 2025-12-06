@@ -135,6 +135,50 @@ const downloadFile = async (req, res) => {
   res.download(filePath, file.originalName);
 };
 
+const getFilePermissions = async (req, res) => {
+  const file = await File.findById(req.params.id)
+    .populate("owner", "name email")
+    .populate("accessControl", "name email");
+
+  if (!file) return res.status(404).json({ message: "File not found" });
+
+  const isOwner = file.owner._id.toString() === req.user.id;
+  const hasAccess = file.accessControl.some(
+    (u) => u._id.toString() === req.user.id
+  );
+
+  if (!isOwner && !hasAccess) {
+    return res
+      .status(403)
+      .json({ message: "Not authorized to view permissions" });
+  }
+
+  res.status(200).json({
+    owner: file.owner,
+    accessControl: file.accessControl,
+  });
+};
+
+const removeFileAccess = async (req, res) => {
+  const { userId } = req.params;
+  const file = await File.findById(req.params.id);
+
+  if (!file) return res.status(404).json({ message: "File not found" });
+
+  if (file.owner.toString() !== req.user.id) {
+    return res
+      .status(403)
+      .json({ message: "Only the owner can revoke access" });
+  }
+
+  file.accessControl = file.accessControl.filter(
+    (id) => id.toString() !== userId
+  );
+  await file.save();
+
+  res.status(200).json({ message: "Access revoked" });
+};
+
 module.exports = {
   uploadFiles,
   getMyFiles,
@@ -143,4 +187,6 @@ module.exports = {
   accessSharedFile,
   downloadFile,
   deleteFile,
+  getFilePermissions,
+  removeFileAccess,
 };

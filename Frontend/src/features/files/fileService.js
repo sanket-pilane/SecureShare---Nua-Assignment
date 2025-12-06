@@ -79,6 +79,21 @@ const deleteFile = async (fileId, token) => {
   return response.data;
 };
 
+const getPermissions = async (fileId, token) => {
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const response = await axios.get(API_URL + fileId + "/permissions", config);
+  return response.data;
+};
+
+const revokeAccess = async (fileId, userId, token) => {
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const response = await axios.delete(
+    API_URL + fileId + "/permissions/" + userId,
+    config
+  );
+  return response.data;
+};
+
 const fileService = {
   uploadFiles,
   getFiles,
@@ -87,6 +102,8 @@ const fileService = {
   deleteFile,
   accessLink,
   downloadFile,
+  getPermissions,
+  revokeAccess,
 };
 
 export default fileService;

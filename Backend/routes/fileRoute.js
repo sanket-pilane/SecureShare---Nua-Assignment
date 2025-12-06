@@ -10,6 +10,8 @@ const {
   accessSharedFile,
   downloadFile,
   deleteFile,
+  getFilePermissions,
+  removeFileAccess,
 } = require("../controllers/fileController");
 
 const router = express.Router();
@@ -50,5 +52,7 @@ router.post("/:id/link", protect, generateShareLink);
 router.get("/share/:token", protect, accessSharedFile);
 router.get("/download/:id", protect, downloadFile);
 router.delete("/:id", protect, deleteFile);
+router.get("/:id/permissions", protect, getFilePermissions);
+router.delete("/:id/permissions/:userId", protect, removeFileAccess);
 
 module.exports = router;
