@@ -2,7 +2,14 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const { protect } = require("../middleware/authMiddleware");
-const { uploadFiles, getMyFiles } = require("../controllers/fileController");
+const {
+  uploadFiles,
+  getMyFiles,
+  shareFile,
+  generateShareLink,
+  accessSharedFile,
+  downloadFile,
+} = require("../controllers/fileController");
 
 const router = express.Router();
 
@@ -37,5 +44,9 @@ const upload = multer({
 
 router.post("/", protect, upload.array("files", 10), uploadFiles);
 router.get("/", protect, getMyFiles);
+router.post("/:id/share", protect, shareFile);
+router.post("/:id/link", protect, generateShareLink);
+router.get("/share/:token", protect, accessSharedFile);
+router.get("/download/:id", protect, downloadFile);
 
 module.exports = router;

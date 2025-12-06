@@ -14,6 +14,8 @@ const fileSchema = mongoose.Schema(
     },
     accessControl: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     isPublic: { type: Boolean, default: false },
+    shareToken: { type: String, default: null },
+    shareExpiresAt: { type: Date, default: null },
   },
   {
     timestamps: true,

@@ -30,9 +30,52 @@ const getFiles = async (token) => {
   return response.data;
 };
 
+const shareFile = async (fileId, email, token) => {
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const response = await axios.post(
+    API_URL + fileId + "/share",
+    { email },
+    config
+  );
+  return response.data;
+};
+
+const generateLink = async (fileId, token) => {
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const response = await axios.post(API_URL + fileId + "/link", {}, config);
+  return response.data;
+};
+
+const accessLink = async (shareToken, token) => {
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const response = await axios.get(API_URL + "share/" + shareToken, config);
+  return response.data;
+};
+
+const downloadFile = async (fileId, token, filename) => {
+  const config = {
+    headers: { Authorization: `Bearer ${token}` },
+    responseType: "blob",
+  };
+  const response = await axios.get(API_URL + "download/" + fileId, config);
+
+  // Create download link
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
+
 const fileService = {
   uploadFiles,
   getFiles,
+  shareFile,
+  generateLink,
+  accessLink,
+  downloadFile,
 };
 
 export default fileService;
