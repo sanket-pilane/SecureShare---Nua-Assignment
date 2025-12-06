@@ -1,6 +1,8 @@
 # 🛡️ SecureShare
 
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-green?style=for-the-badge&logo=github)](https://github.com/your-username/secureshare)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-green?style=for-the-badge&logo=github)](https://github.com/your-username/secureshare) [![Live Demo](https://img.shields.io/badge/Live%20Demo-Open-brightgreen?style=for-the-badge&logo=vercel&logoColor=white)](https://secure-share-nua-assignment.vercel.app/)
+
+🚀 Live Demo: https://secure-share-nua-assignment.vercel.app/ 🔗
 
 > **A production-grade, full-stack file storage system featuring stream-based uploads, granular Role-Based Access Control (RBAC), secure public sharing, and Hybrid Cloud Storage.**
 

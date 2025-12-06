@@ -207,8 +207,10 @@ const removeFileAccess = async (req, res) => {
 const generateShareLink = async (req, res) => {
   const crypto = require("crypto");
   const file = await File.findById(req.params.id);
-  if (file.owner.toString() !== req.user.id)
+
+  if (file.owner.toString() !== req.user.id) {
     return res.status(401).json({ message: "Not authorized" });
+  }
 
   const token = crypto.randomBytes(16).toString("hex");
   const expiryDate = new Date();
@@ -218,7 +220,9 @@ const generateShareLink = async (req, res) => {
   file.shareExpiresAt = expiryDate;
   await file.save();
 
-  const link = `http://localhost:5173/share/${token}`;
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const link = `${baseUrl}/share/${token}`;
+
   res.status(200).json({ link, expiresAt: expiryDate });
 };
 
