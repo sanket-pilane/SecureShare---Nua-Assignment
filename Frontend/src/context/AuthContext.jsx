@@ -43,7 +43,6 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     authService.logout();
     setUser(null);
-    // Optional: Clear any other session data here
   };
 
   return (

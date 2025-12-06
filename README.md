@@ -2,7 +2,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-green?style=for-the-badge&logo=github)](https://github.com/your-username/secureshare)
 
-> **A production-grade, full-stack file storage system featuring stream-based uploads, granular Role-Based Access Control (RBAC), and secure public sharing.**
+> **A production-grade, full-stack file storage system featuring stream-based uploads, granular Role-Based Access Control (RBAC), secure public sharing, and Hybrid Cloud Storage.**
 
 **SecureShare** is designed to replicate the core functionality of enterprise tools like Google Drive. It solves critical engineering challenges such as handling large file uploads without server crashes (using Streams), managing complex ownership permissions, and providing a seamless "Shadcn-style" dark mode experience.
 
@@ -10,9 +10,9 @@
 
 ## 🚀 Executive Summary
 
-- **Goal**: Build a scalable, secure file repository that doesn't rely on third-party cloud storage (S3) for core logic.
-- **Target Audience**: Enterprises, Privacy-focused teams, and Developers needing a reference architecture.
-- **Key Value**: Total control over data, zero-knowledge architectural principles, and high-performance file handling.
+- **Goal**: Build a scalable, secure file repository that serves as a reference architecture for Hybrid Cloud systems.
+- **Target Audience**: Enterprises, Privacy-focused teams, and Developers.
+- **Key Value**: Total control over data with the flexibility to switch between On-Premise (Local) and Cloud (AWS S3) storage instantly.
 
 ---
 
@@ -48,6 +48,27 @@
 
 ---
 
+## ☁️ Hybrid Storage Architecture (New)
+
+We implemented a **Strategy Pattern** for file storage, allowing the application to switch between Local Disk Storage and AWS S3 Storage via a simple environment variable.
+
+### 1. Local Storage Strategy (`USE_CLOUD_STORAGE=false`)
+
+- **How it works**: Files are streamed directly to the server's local `uploads/` directory.
+- **Use Case**: Development, Offline environments, or Air-gapped internal servers.
+- **Delivery**: The backend serves files using `res.download()` from the physical disk.
+
+### 2. AWS S3 Strategy (`USE_CLOUD_STORAGE=true`)
+
+- **How it works**: Multer streams the upload directly to an AWS S3 Bucket. The server never stores the file on disk.
+- **Use Case**: Production, Scalable deployments (Render/Vercel/Heroku).
+- **Delivery (Proxy Stream)**:
+  - To solve CORS and Security issues, we do _not_ expose the raw S3 URL.
+  - Instead, the Backend fetches the file from S3 and **pipes** it to the Frontend (`S3 -> Backend -> Client`).
+  - This ensures files remain private and can only be accessed by authenticated users via our API.
+
+---
+
 ## 🧠 System Logic & Edge Cases
 
 We implemented specific logic to handle complex real-world scenarios:
@@ -56,18 +77,18 @@ We implemented specific logic to handle complex real-world scenarios:
 
 - **Scenario**: User A shares a file with User B. User B clicks "Delete".
 - **Logic**: The system checks the user's role.
-  - If **Owner**: The file is permanently deleted from the Database AND the Disk (`fs.unlink`).
+  - If **Owner**: The file is permanently deleted from the Database AND the Disk/S3 bucket.
   - If **Viewer**: The user is only removed from the `accessControl` array. The file remains safe for the owner.
 
 ### 2. The "Ghost File" Prevention
 
-- **Scenario**: A record is deleted from MongoDB, but the binary file remains in the `uploads/` folder, eating up disk space over years.
-- **Logic**: We implemented a strict synchronous cleanup. When `File.deleteOne()` is called, the controller locates the physical path and executes a filesystem removal immediately.
+- **Scenario**: A record is deleted from MongoDB, but the binary file remains in the `uploads/` folder or S3 Bucket, costing money.
+- **Logic**: We implemented a strict synchronous cleanup. When `File.deleteOne()` is called, the controller locates the physical path (or S3 Key) and executes a removal command immediately before removing the DB record.
 
 ### 3. Secure Previews (Blob Isolation)
 
 - **Scenario**: Viewing a PDF or Image should not require downloading it to the user's "Downloads" folder.
-- **Logic**: We fetch the binary stream using an Auth Token, convert it to a **Blob Object**, and generate a temporary `blob:` URL. This allows secure in-browser viewing that is revoked immediately upon closing the modal to prevent memory leaks.
+- **Logic**: We fetch the binary stream using an Auth Token, convert it to a **Blob Object**, and generate a temporary `blob:` URL. This allows secure in-browser viewing that is revoked immediately upon closing the modal.
 
 ---
 
@@ -93,38 +114,47 @@ flowchart TD
 subgraph Client["Frontend (React + Vite)"]
     Auth["Auth Context"]
     Dash["Dashboard UI"]
-    Stream["File Streamer"]
+    Blob["Blob Generator"]
 end
 
 %% ─────────────── SERVER SIDE ───────────────
 subgraph Server["Backend (Node + Express)"]
-    Middleware["Auth Middleware - JWT"]
+    Middleware["Auth Middleware"]
     Controller["File Controller"]
-    StreamPipe["Multer Stream Pipe"]
+    Strategy["Storage Strategy Switch"]
 end
 
-%% ─────────────── DATA ───────────────
-subgraph Data["Persistence"]
-    Mongo["MongoDB - Metadata"]
-    Disk["Local Disk /uploads"]
+%% ─────────────── STORAGE LAYERS ───────────────
+subgraph Storage["Hybrid Persistence"]
+    direction TB
+    Mongo[("MongoDB (Metadata)")]
+
+    subgraph Local["Strategy A: Local"]
+        Disk[("Local /uploads")]
+    end
+
+    subgraph Cloud["Strategy B: Cloud"]
+        S3[("AWS S3 Bucket")]
+    end
 end
 
 %% FLOWS
-Client -->|Bearer Token| Middleware
-Middleware -->|Validated User| Controller
+Client -->|Upload Request| Middleware
+Middleware -->|Auth Valid| Controller
+Controller -->|Select Strategy| Strategy
 
-%% Upload Flow
-Stream -->|Multipart Chunk| StreamPipe
-StreamPipe -->|Write Stream| Disk
-StreamPipe -->|File Metadata| Mongo
+%% Write Flow
+Strategy -->|Env: Local| Disk
+Strategy -->|Env: Cloud| S3
+Strategy -->|Metadata| Mongo
 
-%% Access Flow
-Dash -->|Request File| Controller
-Controller -->|Check Access Control| Mongo
-Mongo -->|Permission OK| Controller
-Controller -->|Read Stream| Disk
-Disk -->|Binary Data| Dash
-
+%% Read Flow (Proxy Stream)
+Dash -->|Get File| Controller
+Controller -->|Fetch Stream| Disk
+Controller -->|Fetch Stream| S3
+S3 -.->|Pipe Stream| Controller
+Disk -.->|Pipe Stream| Controller
+Controller -->|Binary Stream| Client
 ```
 
 ---
@@ -148,26 +178,48 @@ Disk -->|Binary Data| Dash
 
 - Node.js (v18+)
 - MongoDB (Local or Atlas)
+- AWS Account (Optional, for Cloud Mode)
 
 ### 🚀 Quick Start
 
-#### Clone the repository
+#### 1. Clone the repository
 
 ```bash
 git clone https://github.com/your-username/secureshare.git
 cd secureshare
 ```
 
-#### Backend Setup
+#### 2. Backend Setup
 
 ```bash
 cd Backend
 npm install
-# Create .env with: PORT=5000, MONGO_URI=..., JWT_SECRET=...
+```
+
+Create a `.env` file:
+
+```
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/secureshare
+JWT_SECRET=your_super_secret_key
+
+# STORAGE STRATEGY (true = S3, false = Local)
+USE_CLOUD_STORAGE=false
+
+# AWS CONFIG (Only required if USE_CLOUD_STORAGE=true)
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+AWS_REGION=us-east-1
+AWS_BUCKET_NAME=your-bucket
+```
+
+Run the server:
+
+```bash
 npm run dev
 ```
 
-#### Frontend Setup
+#### 3. Frontend Setup
 
 ```bash
 cd Frontend
@@ -175,7 +227,7 @@ npm install
 npm run dev
 ```
 
-#### Access App
+#### 4. Access App
 
 Open http://localhost:5173
 
@@ -206,7 +258,7 @@ Open http://localhost:5173
 
 - **No RAM Overload**: Files are streamed directly to disk, preventing memory crashes on large uploads.
 - **Access Isolation**: Backend middleware verifies `req.user._id` against the file's `accessControl` array before serving any byte.
-- **Sanitization**: Filenames are sanitized, and "Magic Byte" detection (planned) prevents spoofing extensions.
+- **S3 Key Encoding**: Handles special characters and spaces in filenames to prevent NoSuchKey errors during AWS retrieval.
 
 ---
 
@@ -221,4 +273,3 @@ Open http://localhost:5173
 ---
 
 <p align="center">Built with ❤️ by Sanket Pilane</p>
-j
