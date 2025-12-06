@@ -7,7 +7,9 @@ node_modules/
 .env.*
 **/.env
 **/.env.*
-
+Backend/uploads/*
+uploads/*
+!uploads/.gitkeep
 
 dist/
 build/

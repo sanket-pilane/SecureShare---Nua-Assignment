@@ -165,10 +165,13 @@ const removeFileAccess = async (req, res) => {
 
   if (!file) return res.status(404).json({ message: "File not found" });
 
-  if (file.owner.toString() !== req.user.id) {
+  const isOwner = file.owner.toString() === req.user.id;
+  const isSelfRemoval = req.user.id === userId;
+
+  if (!isOwner && !isSelfRemoval) {
     return res
       .status(403)
-      .json({ message: "Only the owner can revoke access" });
+      .json({ message: "Not authorized to remove this user" });
   }
 
   file.accessControl = file.accessControl.filter(
@@ -176,7 +179,9 @@ const removeFileAccess = async (req, res) => {
   );
   await file.save();
 
-  res.status(200).json({ message: "Access revoked" });
+  res.status(200).json({
+    message: isSelfRemoval ? "Removed from your dashboard" : "Access revoked",
+  });
 };
 
 module.exports = {

@@ -62,16 +62,29 @@ const Dashboard = () => {
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
+
+    const fileToDelete = files.find((f) => f._id === deleteConfirm);
+    if (!fileToDelete) return;
+
+    const isOwner =
+      fileToDelete.owner === user._id || fileToDelete.owner?._id === user._id;
+
     try {
-      await fileService.deleteFile(deleteConfirm, user.token);
+      if (isOwner) {
+        await fileService.deleteFile(deleteConfirm, user.token);
+        toast.success("File permanently deleted");
+      } else {
+        await fileService.revokeAccess(deleteConfirm, user._id, user.token);
+        toast.success("File removed from your view");
+      }
+
       setFiles(files.filter((f) => f._id !== deleteConfirm));
-      toast.success("File deleted");
       setDeleteConfirm(null);
     } catch (error) {
-      toast.error("Could not delete file");
+      console.error(error);
+      toast.error("Operation failed");
     }
   };
-
   const handleDownload = (file) => {
     fileService.downloadFile(file._id, user.token, file.originalName);
   };
