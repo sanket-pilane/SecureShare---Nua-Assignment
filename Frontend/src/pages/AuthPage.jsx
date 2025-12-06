@@ -32,8 +32,7 @@ import {
 import { LottieAnimation } from "../components/LottieAnimation";
 import { TypewriterEffect } from "../components/TypewriterEffect";
 
-// Placeholder Animation (Replace with your actual import or keep null)
-const aiBrainAnimation = null;
+import aiBrainAnimation from "../assets/cloud_ animation.json";
 
 export default function AuthPage() {
   const { login, register } = useContext(AuthContext);
