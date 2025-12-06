@@ -3,8 +3,8 @@ const path = require("path");
 const { GetObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const File = require("../models/fileModel");
 const { s3 } = require("../config/storage");
-
-// --- UPLOAD LOGIC ---
+const { logActivity } = require("../utils/logger");
+const AuditLog = require("../models/auditModel");
 const uploadFiles = async (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ message: "No files uploaded" });
@@ -26,13 +26,18 @@ const uploadFiles = async (req, res) => {
     });
 
     const savedFile = await newFile.save();
+    await logActivity(
+      "UPLOAD",
+      savedFile._id,
+      req.user.id,
+      `Filename: ${savedFile.originalName}`
+    );
     fileRecords.push(savedFile);
   }
 
   res.status(201).json(fileRecords);
 };
 
-// --- GET FILES LOGIC ---
 const getMyFiles = async (req, res) => {
   const files = await File.find({
     $or: [{ owner: req.user.id }, { accessControl: req.user.id }],
@@ -41,7 +46,6 @@ const getMyFiles = async (req, res) => {
   res.status(200).json(files);
 };
 
-// --- DOWNLOAD LOGIC (Fixed for Spaces/Special Chars) ---
 const downloadFile = async (req, res) => {
   try {
     const file = await File.findById(req.params.id);
@@ -56,10 +60,8 @@ const downloadFile = async (req, res) => {
       return res.status(403).json({ message: "Access Denied" });
 
     if (file.path.startsWith("http")) {
-      // S3 PROXY STREAM
       const bucketUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
 
-      // FIX: Decode the URL to turn "%20" back into " " (space)
       const rawKey = file.path.replace(bucketUrl, "");
       const fileKey = decodeURIComponent(rawKey);
 
@@ -75,10 +77,14 @@ const downloadFile = async (req, res) => {
         "Content-Disposition",
         `attachment; filename="${file.originalName}"`
       );
-
+      await logActivity(
+        "DOWNLOAD",
+        file._id,
+        req.user.id,
+        "File downloaded via Dashboard"
+      );
       s3Item.Body.pipe(res);
     } else {
-      // LOCAL FILE SYSTEM
       const filePath = path.resolve(__dirname, "..", file.path);
 
       if (fs.existsSync(filePath)) {
@@ -89,28 +95,24 @@ const downloadFile = async (req, res) => {
     }
   } catch (error) {
     console.error("Download Error:", error);
-    // Don't crash the server, send a cleaner error
+
     res.status(500).json({ message: "Download failed", error: error.message });
   }
 };
 
-// --- DELETE LOGIC (Fixed for Spaces/Special Chars) ---
 const deleteFile = async (req, res) => {
   try {
     const file = await File.findById(req.params.id);
 
     if (!file) return res.status(404).json({ message: "File not found" });
 
-    // Strict Rule: Only Owner can delete
     if (file.owner.toString() !== req.user.id) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
     if (file.path.startsWith("http")) {
-      // S3 DELETION
       const bucketUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
 
-      // FIX: Decode here too
       const rawKey = file.path.replace(bucketUrl, "");
       const fileKey = decodeURIComponent(rawKey);
 
@@ -122,14 +124,18 @@ const deleteFile = async (req, res) => {
       await s3.send(command);
       console.log(`Deleted from S3: ${fileKey}`);
     } else {
-      // LOCAL DELETION
       const filePath = path.resolve(__dirname, "..", file.path);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
         console.log(`Deleted from Disk: ${filePath}`);
       }
     }
-
+    await logActivity(
+      "DELETE",
+      req.params.id,
+      req.user.id,
+      "File permanently deleted"
+    );
     await File.deleteOne({ _id: req.params.id });
     res.status(200).json({ id: req.params.id });
   } catch (error) {
@@ -138,15 +144,10 @@ const deleteFile = async (req, res) => {
   }
 };
 
-// --- PERMISSIONS / SHARING ---
-
 const shareFile = async (req, res) => {
   const { email } = req.body;
   const file = await File.findById(req.params.id);
-  // ... (No changes needed here, assuming you have User model imported if not add it)
-  // Note: Ensure User model is required at top if used here.
-  // For brevity, assuming existing logic from previous steps is preserved if omitted.
-  // I will add the basic logic back for safety:
+
   const User = require("../models/userModel");
 
   if (!file) return res.status(404).json({ message: "File not found" });
@@ -159,6 +160,7 @@ const shareFile = async (req, res) => {
   if (!file.accessControl.includes(userToShare._id)) {
     file.accessControl.push(userToShare._id);
     await file.save();
+    await logActivity("SHARE", file._id, req.user.id, `Shared with ${email}`);
   }
   res.status(200).json({ message: `Shared with ${userToShare.name}` });
 };
@@ -216,7 +218,6 @@ const generateShareLink = async (req, res) => {
   file.shareExpiresAt = expiryDate;
   await file.save();
 
-  // In production use process.env.FRONTEND_URL
   const link = `http://localhost:5173/share/${token}`;
   res.status(200).json({ link, expiresAt: expiryDate });
 };
@@ -239,6 +240,13 @@ const accessSharedFile = async (req, res) => {
   res.status(200).json(file);
 };
 
+const getFileHistory = async (req, res) => {
+  const logs = await AuditLog.find({ file: req.params.id })
+    .populate("performedBy", "name email")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json(logs);
+};
 module.exports = {
   uploadFiles,
   getMyFiles,
@@ -249,4 +257,5 @@ module.exports = {
   removeFileAccess,
   generateShareLink,
   accessSharedFile,
+  getFileHistory,
 };
