@@ -4,21 +4,19 @@ import authService from "../features/auth/authService";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      setUser(storedUser);
-    }
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   const register = async (userData) => {
     setIsLoading(true);
     try {
       const data = await authService.register(userData);
       setUser(data);
+
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || error.message;
@@ -45,6 +43,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     authService.logout();
     setUser(null);
+    // Optional: Clear any other session data here
   };
 
   return (
