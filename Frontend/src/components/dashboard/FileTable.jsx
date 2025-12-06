@@ -11,6 +11,7 @@ const FileTable = ({
   onDownload,
   onDeleteRequest,
   onPreview,
+  onHistory,
 }) => {
   return (
     <Card className="overflow-hidden border-slate-800 bg-slate-900/40 flex flex-col">
@@ -68,6 +69,7 @@ const FileTable = ({
                         onShare={() => onShare(file)}
                         onDownload={() => onDownload(file)}
                         onDelete={() => onDeleteRequest(file._id)}
+                        onViewHistory={() => onHistory(file)}
                       />
                     </td>
                   </motion.tr>

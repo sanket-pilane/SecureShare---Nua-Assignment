@@ -1,9 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaEllipsisV, FaShareAlt, FaDownload, FaTrash } from "react-icons/fa";
+// FIX: Added FaHistory to the imports below
+import {
+  FaEllipsisV,
+  FaShareAlt,
+  FaDownload,
+  FaTrash,
+  FaHistory,
+} from "react-icons/fa";
 
-const ActionMenu = ({ onShare, onDownload, onDelete }) => {
+const ActionMenu = ({ onShare, onDownload, onDelete, onViewHistory }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const buttonRef = useRef(null);
@@ -86,6 +93,15 @@ const ActionMenu = ({ onShare, onDownload, onDelete }) => {
                   className="flex w-full items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
                 >
                   <FaDownload className="mr-3 text-green-500" /> Download
+                </button>
+                <button
+                  onClick={() => {
+                    onViewHistory();
+                    setIsOpen(false);
+                  }}
+                  className="flex w-full items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                >
+                  <FaHistory className="mr-3 text-purple-400" /> View Activity
                 </button>
                 <div className="border-t border-slate-800 my-1"></div>
                 <button

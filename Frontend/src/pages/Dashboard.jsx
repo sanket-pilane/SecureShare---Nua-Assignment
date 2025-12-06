@@ -11,7 +11,7 @@ import FileTable from "../components/dashboard/FileTable";
 import DeleteConfirmationModal from "../components/dashboard/DeleteConfirmationModal";
 import FilePreviewModal from "../components/dashboard/FilePreviewModal";
 import ShareModal from "../components/ShareModal";
-
+import FileHistoryModal from "../components/dashboard/FileHistoryModal";
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
 
@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
+  const [historyFile, setHistoryFile] = useState(null);
 
   const totalSize = files.reduce((acc, file) => acc + file.size, 0);
   const filteredFiles = files.filter((f) =>
@@ -105,6 +106,7 @@ const Dashboard = () => {
           onDownload={handleDownload}
           onDeleteRequest={(id) => setDeleteConfirm(id)}
           onPreview={(file) => setPreviewFile(file)}
+          onHistory={(file) => setHistoryFile(file)}
         />
       </div>
 
@@ -129,6 +131,14 @@ const Dashboard = () => {
             file={previewFile}
             userToken={user.token}
             onClose={() => setPreviewFile(null)}
+          />
+        )}
+
+        {historyFile && (
+          <FileHistoryModal
+            file={historyFile}
+            userToken={user.token}
+            onClose={() => setHistoryFile(null)}
           />
         )}
       </AnimatePresence>

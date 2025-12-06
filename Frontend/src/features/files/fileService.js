@@ -106,6 +106,12 @@ const getFilePreview = async (fileId, token) => {
   );
 };
 
+const getFileHistory = async (fileId, token) => {
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const response = await axios.get(API_URL + fileId + "/history", config);
+  return response.data;
+};
+
 const fileService = {
   uploadFiles,
   getFiles,
@@ -117,6 +123,7 @@ const fileService = {
   getPermissions,
   revokeAccess,
   getFilePreview,
+  getFileHistory,
 };
 
 export default fileService;
