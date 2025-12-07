@@ -15,13 +15,11 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    let activeUrl = null;
     const loadPreview = async () => {
       try {
         setLoading(true);
-        // Fetch the secure stream
+
         const url = await fileService.getFilePreview(file._id, userToken);
-        activeUrl = url;
         setBlobUrl(url);
       } catch (err) {
         console.error("Preview failed", err);
@@ -32,15 +30,10 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
     };
 
     if (file) loadPreview();
-
-    return () => {
-      if (activeUrl) window.URL.revokeObjectURL(activeUrl);
-    };
   }, [file, userToken]);
 
-  // --- MIME TYPE CHECKS ---
   const isImage = file.mimeType.startsWith("image/");
-  const isVideo = file.mimeType.startsWith("video/"); // Added Video Check
+  const isVideo = file.mimeType.startsWith("video/");
   const isPdf = file.mimeType === "application/pdf";
 
   const handleDownload = () => {
@@ -55,7 +48,6 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
         exit={{ opacity: 0, scale: 0.95 }}
         className="relative w-full h-full max-w-5xl max-h-[90vh] flex flex-col bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-800"
       >
-        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-950">
           <div className="flex flex-col">
             <h2 className="text-lg font-semibold text-slate-100 truncate max-w-md">
@@ -81,7 +73,6 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
           </div>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 bg-slate-950/50 flex items-center justify-center overflow-hidden relative">
           {loading && (
             <div className="flex flex-col items-center gap-3 text-blue-400">
@@ -102,7 +93,6 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
 
           {!loading && !error && blobUrl && (
             <>
-              {/* 1. IMAGE PREVIEW */}
               {isImage && (
                 <img
                   src={blobUrl}
@@ -111,7 +101,6 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
                 />
               )}
 
-              {/* 2. PDF PREVIEW */}
               {isPdf && (
                 <iframe
                   src={blobUrl}
@@ -120,7 +109,6 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
                 />
               )}
 
-              {/* 3. VIDEO PREVIEW (NEW) */}
               {isVideo && (
                 <video
                   controls
@@ -132,7 +120,6 @@ const FilePreviewModal = ({ file, userToken, onClose }) => {
                 </video>
               )}
 
-              {/* 4. FALLBACK (Docs, Excel, Zips) */}
               {!isImage && !isPdf && !isVideo && (
                 <div className="text-center">
                   <div className="p-6 bg-slate-900 rounded-full inline-block mb-4">

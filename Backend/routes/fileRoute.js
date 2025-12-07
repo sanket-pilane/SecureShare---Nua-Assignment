@@ -12,6 +12,7 @@ const {
   getFilePermissions,
   removeFileAccess,
   getFileHistory,
+  getFilePreviewUrl,
 } = require("../controllers/fileController");
 
 const { upload } = require("../config/storage");
@@ -26,5 +27,6 @@ router.delete("/:id", protect, deleteFile);
 router.get("/:id/permissions", protect, getFilePermissions);
 router.delete("/:id/permissions/:userId", protect, removeFileAccess);
 router.get("/:id/history", protect, getFileHistory);
+router.get("/:id/preview-url", protect, getFilePreviewUrl);
 
 module.exports = router;

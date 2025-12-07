@@ -5,6 +5,30 @@ import ActionMenu from "./ActionMenu";
 import FileIcon from "./FileIcon";
 import { formatBytes } from "../../lib/utils";
 
+const formatFileType = (mimeType) => {
+  if (!mimeType) return "FILE";
+  const typeMap = {
+    "application/pdf": "PDF",
+    "image/png": "PNG",
+    "image/jpeg": "JPG",
+    "image/gif": "GIF",
+    "video/mp4": "MP4",
+    "video/x-matroska": "MKV",
+    "application/zip": "ZIP",
+    "text/csv": "CSV",
+    "text/plain": "TXT",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      "DOCX",
+    "application/msword": "DOC",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
+    "application/vnd.ms-excel": "XLS",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      "PPTX",
+    "application/vnd.ms-powerpoint": "PPT",
+  };
+  return typeMap[mimeType] || mimeType.split("/")[1]?.toUpperCase() || "FILE";
+};
+
 const FileTable = ({
   files,
   onShare,
@@ -55,7 +79,7 @@ const FileTable = ({
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
-                        {file.mimeType.split("/")[1]?.toUpperCase() || "FILE"}
+                        {formatFileType(file.mimeType)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-400">

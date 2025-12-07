@@ -1,6 +1,10 @@
 const fs = require("fs");
 const path = require("path");
-const { GetObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const {
+  GetObjectCommand,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+} = require("@aws-sdk/client-s3");
 const File = require("../models/fileModel");
 const { s3 } = require("../config/storage");
 const { logActivity } = require("../utils/logger");
@@ -14,12 +18,28 @@ const uploadFiles = async (req, res) => {
 
   for (const file of req.files) {
     const storagePath = file.location || file.path;
+    let fileSize = file.size;
+
+    if (fileSize === 0 && file.location) {
+      try {
+        const command = new HeadObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: file.key,
+        });
+        const s3Metadata = await s3.send(command);
+        if (s3Metadata.ContentLength) {
+          fileSize = s3Metadata.ContentLength;
+        }
+      } catch (error) {
+        console.error("Failed to fetch S3 metadata for 0-byte file:", error);
+      }
+    }
 
     const newFile = new File({
       filename: file.key || file.filename,
       originalName: file.originalname,
       mimeType: file.mimetype,
-      size: file.size,
+      size: fileSize,
       path: storagePath,
       owner: req.user.id,
       accessControl: [req.user.id],
@@ -60,14 +80,9 @@ const downloadFile = async (req, res) => {
       return res.status(403).json({ message: "Access Denied" });
 
     if (file.path.startsWith("http")) {
-      const bucketUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
-
-      const rawKey = file.path.replace(bucketUrl, "");
-      const fileKey = decodeURIComponent(rawKey);
-
       const command = new GetObjectCommand({
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: fileKey,
+        Key: file.filename, // Use stored key directly
       });
 
       const s3Item = await s3.send(command);
@@ -111,18 +126,13 @@ const deleteFile = async (req, res) => {
     }
 
     if (file.path.startsWith("http")) {
-      const bucketUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
-
-      const rawKey = file.path.replace(bucketUrl, "");
-      const fileKey = decodeURIComponent(rawKey);
-
       const command = new DeleteObjectCommand({
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: fileKey,
+        Key: file.filename, // Use stored key directly
       });
 
       await s3.send(command);
-      console.log(`Deleted from S3: ${fileKey}`);
+      console.log(`Deleted from S3: ${file.filename}`);
     } else {
       const filePath = path.resolve(__dirname, "..", file.path);
       if (fs.existsSync(filePath)) {
@@ -251,6 +261,42 @@ const getFileHistory = async (req, res) => {
 
   res.status(200).json(logs);
 };
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
+const getFilePreviewUrl = async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id);
+    if (!file) return res.status(404).json({ message: "File not found" });
+
+    const isAuthorized =
+      file.owner.toString() === req.user.id ||
+      file.accessControl.includes(req.user.id);
+
+    if (!isAuthorized)
+      return res.status(403).json({ message: "Access Denied" });
+
+    if (file.path.startsWith("http")) {
+      const command = new GetObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: file.filename,
+      });
+
+      const url = await getSignedUrl(s3, command, { expiresIn: 900 });
+      res.status(200).json({ url });
+    } else {
+      const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+      const downloadUrl = `${req.protocol}://${req.get(
+        "host"
+      )}/api/files/download/${file._id}`;
+      res.status(200).json({ url: downloadUrl });
+    }
+  } catch (error) {
+    console.error("Preview URL Error:", error);
+    res.status(500).json({ message: "Could not generate preview URL" });
+  }
+};
+
 module.exports = {
   uploadFiles,
   getMyFiles,
@@ -262,4 +308,5 @@ module.exports = {
   generateShareLink,
   accessSharedFile,
   getFileHistory,
+  getFilePreviewUrl,
 };

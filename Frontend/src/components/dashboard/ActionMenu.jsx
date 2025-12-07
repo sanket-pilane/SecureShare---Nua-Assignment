@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-// FIX: Added FaHistory to the imports below
+
 import {
   FaEllipsisV,
   FaShareAlt,
@@ -24,8 +24,16 @@ const ActionMenu = ({ onShare, onDownload, onDelete, onViewHistory }) => {
     }
 
     const rect = buttonRef.current.getBoundingClientRect();
+    const menuHeight = 200;
+    const spaceBelow = window.innerHeight - rect.bottom;
+
+    let top = rect.bottom + window.scrollY + 4;
+    if (spaceBelow < menuHeight) {
+      top = rect.top + window.scrollY - menuHeight - 4;
+    }
+
     setCoords({
-      top: rect.bottom + window.scrollY + 4,
+      top,
       left: rect.right + window.scrollX - 192,
     });
     setIsOpen(true);

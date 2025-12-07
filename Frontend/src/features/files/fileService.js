@@ -3,11 +3,19 @@ import axios from "axios";
 const API_URL =
   (import.meta.env.VITE_API_URL || "http://localhost:5000/api") + "/files/";
 
-const uploadFiles = async (files, token) => {
+const uploadFiles = async (files, token, onProgress) => {
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "multipart/form-data",
+    },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress) {
+        const percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        );
+        onProgress(percentCompleted);
+      }
     },
   };
 
@@ -60,7 +68,6 @@ const downloadFile = async (fileId, token, filename) => {
   };
   const response = await axios.get(API_URL + "download/" + fileId, config);
 
-  // Create download link
   const url = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement("a");
   link.href = url;
@@ -98,13 +105,9 @@ const revokeAccess = async (fileId, userId, token) => {
 const getFilePreview = async (fileId, token) => {
   const config = {
     headers: { Authorization: `Bearer ${token}` },
-    responseType: "blob",
   };
-  const response = await axios.get(API_URL + "download/" + fileId, config);
-
-  return window.URL.createObjectURL(
-    new Blob([response.data], { type: response.headers["content-type"] })
-  );
+  const response = await axios.get(API_URL + fileId + "/preview-url", config);
+  return response.data.url;
 };
 
 const getFileHistory = async (fileId, token) => {
