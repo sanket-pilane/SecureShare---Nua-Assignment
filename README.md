@@ -1,12 +1,26 @@
 # 🛡️ SecureShare
 
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-green?style=for-the-badge&logo=github)](https://github.com/your-username/secureshare) [![Live Demo](https://img.shields.io/badge/Live%20Demo-Open-brightgreen?style=for-the-badge&logo=vercel&logoColor=white)](https://secure-share-nua-assignment.vercel.app/)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-green?style=for-the-badge&logo=github)](https://github.com/sanket-pilane/SecureShare---Nua-Assignment) [![Live Demo](https://img.shields.io/badge/Live%20Demo-Open-brightgreen?style=for-the-badge&logo=vercel&logoColor=white)](https://secure-share-nua-assignment.vercel.app/)
 
 🚀 Live Demo: https://secure-share-nua-assignment.vercel.app/ 🔗
 
 > **A production-grade, full-stack file storage system featuring stream-based uploads, granular Role-Based Access Control (RBAC), secure public sharing, and Hybrid Cloud Storage.**
 
 **SecureShare** is designed to replicate the core functionality of enterprise tools like Google Drive. It solves critical engineering challenges such as handling large file uploads without server crashes (using Streams), managing complex ownership permissions, and providing a seamless "Shadcn-style" dark mode experience.
+
+---
+
+[![Watch Demo Video](https://img.shields.io/badge/Watch-Demo%20Video-blue?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/1JYuc73QDcl4DKy4QQa55hxFsytRVbSsl/view?usp=sharing)
+
+## 📸 Project Preview
+
+| Auth Page                                                                                                 | Dashboard Page                                                                                            |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| <img width="460" src="https://github.com/user-attachments/assets/538eca57-8c73-47e5-8cf9-5a5d50d1a964" /> | <img width="460" src="https://github.com/user-attachments/assets/5bc0444b-39a8-4b16-ac91-de0b45bb101d" /> |
+
+| Activity Log                                                                                              | Sharing Page                                                                                              |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| <img width="460" src="https://github.com/user-attachments/assets/b6db94c8-1e43-4070-a0db-77d61a1b30f5" /> | <img width="460" src="https://github.com/user-attachments/assets/94fb6238-78a7-4fd7-936b-6743f9104e7b" /> |
 
 ---
 
@@ -187,7 +201,7 @@ Controller -->|Binary Stream| Client
 #### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/secureshare.git
+git clone https://github.com/sanket-pilane/SecureShare---Nua-Assignment
 cd secureshare
 ```
 
@@ -232,6 +246,55 @@ npm run dev
 #### 4. Access App
 
 Open http://localhost:5173
+
+---
+
+### 5. Docker Setup (Alternative)
+
+If you prefer to use Docker, follow these steps:
+
+#### Backend Docker Setup
+
+```bash
+cd Backend
+```
+
+Create a `.env` file in the `Backend` directory:
+
+```
+PORT=5000
+MONGO_URI=mongodb://mongo:27017/secureshare
+JWT_SECRET=your_super_secret_key
+
+# STORAGE STRATEGY (true = S3, false = Local)
+USE_CLOUD_STORAGE=false
+
+# AWS CONFIG (Only required if USE_CLOUD_STORAGE=true)
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+AWS_REGION=us-east-1
+AWS_BUCKET_NAME=your-bucket
+```
+
+#### Frontend Docker Setup
+
+```bash
+cd Frontend
+```
+
+Create a `.env` file in the `Frontend` directory:
+
+```
+VITE_API_URL=http://localhost:5000
+```
+
+#### Run with Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+Access the app at http://localhost:5173
 
 ---
 

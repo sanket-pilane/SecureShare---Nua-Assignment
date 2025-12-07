@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: secureshare-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build: ./Backend
+    container_name: secureshare-backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    environment:
+      - PORT=5000
+
+      - MONGO_URI=mongodb://mongo:27017/secureshare
+
+      - JWT_SECRET=${JWT_SECRET}
+      - USE_CLOUD_STORAGE=${USE_CLOUD_STORAGE}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - FRONTEND_URL=http://localhost:80
+    env_file:
+      - ./Backend/.env
+
+  frontend:
+    build: ./Frontend
+    container_name: secureshare-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
